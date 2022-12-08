@@ -16,5 +16,9 @@ public:
 		position += t;
 	}
 
+	glm::vec3 GetPosition() {
+		return position;
+	}
+
 	virtual ~Object() {}
 };
