@@ -15,11 +15,18 @@ class Texture {
 	int width, height;
 	unsigned char* data;
 public:
-	Texture(const char* name): name(name), gl_id(0), id(-1), width(-1), height(-1), data(nullptr) {}
+	Texture(): name(0), gl_id(0), id(-1), width(-1), height(-1), data(nullptr) {}
 
-	void LoadTexture() {
+	void LoadFromFile(const char* name) {
+		this->name = name;
 		data = stbi_load(name, &width, &height, 0, 3);
+		LoadFromData(data, width, height);
+	}
+
+	void LoadFromData(unsigned char* data, int width, int height) {
 		id = txs_count++;
+		this->width = width;
+		this->height = height;
 
 		glActiveTexture(GL_TEXTURE0 + id);
 		glGenTextures(1, &gl_id);
@@ -35,15 +42,15 @@ public:
 	}
 
 	void FreeData() {
-		if (data) stbi_image_free(data);
+		free(data);
+	}
+
+	unsigned GetId() {
+		return id;
 	}
 
 	int GetWidth() { return width; }
 	int GetHeight() { return height; }
-
-	~Texture() {
-		FreeData();
-	}
 
 	friend ResourceManager;
 };

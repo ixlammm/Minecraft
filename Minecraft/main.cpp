@@ -5,6 +5,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <glm/gtc/noise.hpp>
 
 #include "camera.h"
 #include "faces.h"
@@ -24,6 +25,22 @@ Camera camera(glm::vec3(0, 0, 2), glm::vec3(0, 0, -1));
 
 #define KEYS 0.05f
 #define CAMS 0.006f
+
+//Texture GenNoise(int x, int y, int seed = 0x12345) {
+//	unsigned char* data = new unsigned char[x * y * 3];
+//	for (int j(0); j < y; j++) {
+//		for (int i(0); i < x * 3; i+=3) {
+//
+//			int v = int((glm::perlin(glm::vec4(float(i) / 300.f, float(j) / 100.f, seed)) + 1) * 0.5 * 255.f);
+//			data[j * x * 3 + i] = v;
+//			data[j * x * 3 + i + 1] = v;
+//			data[j * x * 3 + i + 2] = v;
+//		}
+//	}
+//	Texture t;
+//	t.LoadFromData(data, x, y);
+//	return t;
+//}
 
 unsigned chunk[16][16][16];
 
@@ -78,6 +95,8 @@ int main() {
 	InitFacePrefab<FaceFrontPrefab>();
 	InitFacePrefab<FaceBackPrefab>();
 
+	//Texture noise = GenNoise(1024, 1024);
+
 	rm.LoadResources();
 
 	glEnable(GL_DEPTH_TEST);
@@ -112,9 +131,13 @@ int main() {
 
 		camera.Rotate(glm::vec3(deltaY * CAMS, deltaX * CAMS, 0));
 
+		glActiveTexture(GL_TEXTURE1);
+
 		shader.SetMat4("transform", transform);
 		shader.SetMat4("view", camera.GetView());
-		shader.SetUint("text", MC_BLOCK_DIRT_ID - 1);
+		shader.SetUint("text", 1);
+
+
 
 		for (int i(0); i < 16; i++) {
 			for (int j(0); j < 16; j++) {
@@ -124,53 +147,30 @@ int main() {
 
 						shader.SetMat4("transform", glm::translate(glm::vec3(i, j, k)));
 
-						if (j == 0 || i == 0 || k == 0 || j == 15 || i == 15 || k == 15) {
-
+						if (j + 1 > 15 || chunk[i][j + 1][k] == 0) {
 							glBindVertexArray(FaceUpPrefab::VAO);
 							glDrawArrays(GL_TRIANGLES, 0, 6);
 
+						}
+						if (j - 1 < 0 || chunk[i][j - 1][k] == 0) {
 							glBindVertexArray(FaceDownPrefab::VAO);
 							glDrawArrays(GL_TRIANGLES, 0, 6);
-
+						}
+						if (i + 1 > 15 || chunk[i + 1][j][k] == 0) {
 							glBindVertexArray(FaceRightPrefab::VAO);
 							glDrawArrays(GL_TRIANGLES, 0, 6);
-
+						}
+						if (i - 1 < 0 || chunk[i - 1][j][k] == 0) {
 							glBindVertexArray(FaceLeftPrefab::VAO);
 							glDrawArrays(GL_TRIANGLES, 0, 6);
-
-							glBindVertexArray(FaceFrontPrefab::VAO);
-							glDrawArrays(GL_TRIANGLES, 0, 6);
-
+						}
+						if (k + 1 > 15 || chunk[i][j][k + 1] == 0) {
 							glBindVertexArray(FaceBackPrefab::VAO);
 							glDrawArrays(GL_TRIANGLES, 0, 6);
-
 						}
-						else {
-							if (chunk[i][j + 1][k] == 0) {
-								glBindVertexArray(FaceUpPrefab::VAO);
-								glDrawArrays(GL_TRIANGLES, 0, 6);
-
-							}
-							if (chunk[i][j - 1][k] == 0) {
-								glBindVertexArray(FaceDownPrefab::VAO);
-								glDrawArrays(GL_TRIANGLES, 0, 6);
-							}
-							if (chunk[i + 1][j][k] == 0) {
-								glBindVertexArray(FaceRightPrefab::VAO);
-								glDrawArrays(GL_TRIANGLES, 0, 6);
-							}
-							if (chunk[i - 1][j][k] == 0) {
-								glBindVertexArray(FaceLeftPrefab::VAO);
-								glDrawArrays(GL_TRIANGLES, 0, 6);
-							}
-							if (chunk[i][j][k + 1] == 0) {
-								glBindVertexArray(FaceBackPrefab::VAO);
-								glDrawArrays(GL_TRIANGLES, 0, 6);
-							}
-							if (chunk[i][j][k - 1] == 0) {
-								glBindVertexArray(FaceFrontPrefab::VAO);
-								glDrawArrays(GL_TRIANGLES, 0, 6);
-							}
+						if (k - 1 < 0 || chunk[i][j][k - 1] == 0) {
+							glBindVertexArray(FaceFrontPrefab::VAO);
+							glDrawArrays(GL_TRIANGLES, 0, 6);
 						}
 					}
 				}

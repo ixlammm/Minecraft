@@ -14,8 +14,8 @@ public:
 
 	void LoadResources() {
 		for (int i(0); i < MC_TEXTURES_COUNT; i++) {
-			Texture t = Texture(MC_TEXTURE_ID_FN_MAP[i]);
-			t.LoadTexture();
+			Texture t = Texture();
+			t.LoadFromFile(MC_TEXTURE_ID_FN_MAP[i]);
 			textures.push_back(t);
 		}
 	}
