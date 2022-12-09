@@ -110,7 +110,7 @@ int main() {
 		wg.Update(camera.GetPosition());
 		for (int i(0); i < DISTANCE; i++) {
 			for (int j(0); j < DISTANCE; j++) {
-				transform = glm::translate((glm::vec3(i - (DISTANCE - 1) / 2, 0, j - (DISTANCE - 1) / 2) + glm::vec3(glm::ivec3(camera.GetPosition() / glm::vec3(16))) + glm::vec3(-0.5, 0, -0.5)) * glm::vec3(16, 0, 16));
+				transform = glm::translate((glm::vec3(i - (DISTANCE) / 2, 0, j - (DISTANCE) / 2) + glm::vec3(glm::ivec3(camera.GetPosition() / glm::vec3(16)))) * glm::vec3(16, 0, 16));
 				wg.GetField()[j * DISTANCE + i]->Use();
 				shader.SetMat4("transform", transform);
 				glBindVertexArray(Chunk::VAO);

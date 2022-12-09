@@ -76,5 +76,6 @@
     <None Include="vs.vert">
       <Filter>Source Files\shaders</Filter>
     </None>
+    <None Include="README.md" />
   </ItemGroup>
 </Project>

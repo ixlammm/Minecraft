@@ -167,6 +167,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="fs.frag" />
+    <None Include="README.md" />
     <None Include="vs.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
