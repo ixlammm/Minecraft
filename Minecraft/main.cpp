@@ -86,6 +86,12 @@ int main() {
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
 	glfwSetCursorPos(window, WIDTH / 2, HEIGHT / 2);
+	
+	shader.SetVec3("lightDir", glm::vec3(-0.5, -1, -1));
+	shader.SetVec3("ambient", glm::vec3(0.5));
+
+	// For Debuging:
+	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	while (!glfwWindowShouldClose(window)) {
 
@@ -107,14 +113,14 @@ int main() {
 		shader.SetMat4("view", camera.GetView());
 		shader.SetUint("text", 1);
 
-		wg.Update(camera.GetPosition());
+		wg.Update(camera.GetPosition() * glm::vec3(1, 0, 1));
 		for (int i(0); i < DISTANCE; i++) {
 			for (int j(0); j < DISTANCE; j++) {
 				transform = glm::translate((glm::vec3(i - (DISTANCE) / 2, 0, j - (DISTANCE) / 2) + glm::vec3(glm::ivec3(camera.GetPosition() / glm::vec3(16)))) * glm::vec3(16, 0, 16));
 				wg.GetField()[j * DISTANCE + i]->Use();
 				shader.SetMat4("transform", transform);
 				glBindVertexArray(Chunk::VAO);
-				glDrawArrays(GL_TRIANGLES, 0, wg.GetField()[j * DISTANCE + i]->buffer.size() / 5);
+				glDrawArrays(GL_TRIANGLES, 0, wg.GetField()[j * DISTANCE + i]->buffer.size() / 8);
 			}
 		}
 

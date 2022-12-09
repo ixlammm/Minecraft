@@ -14,6 +14,8 @@
 	VERTICES (VEC3), TEXTURE_COORDINATES (VEC2)
 */
 
+class WorldGenerator;
+
 class Chunk {
 public:
 	std::vector<float> buffer;
@@ -26,40 +28,45 @@ public:
 		glBindVertexArray(VAO);
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), 0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
 		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
+		glEnableVertexAttribArray(2);
 
 		glBindVertexArray(0);
 	}
 
-	void LoadData(unsigned cubes[16][16][16]) {
+	void LoadChunk(int (*gbap)(glm::vec3, glm::vec3), glm::vec3 cpos) {
 		buffer.clear();
 		for (int i(0); i < 16; i++) {
 			for (int j(0); j < 16; j++) {
 				for (int k(0); k < 16; k++) {
-					if (cubes[i][j][k] != MC_BLOCK_AIR_ID) {
+					int c = gbap(glm::vec3(i, j, k), cpos);
+					if (c != MC_BLOCK_AIR_ID) {
 						glm::vec3 translate(i, j, k);
-						std::vector<float*> faces;
-						if (j + 1 > 15 || cubes[i][j + 1][k] == 0) faces.push_back(FaceUpPrefab		::m_data);
-						if (j - 1 < 00 || cubes[i][j - 1][k] == 0) faces.push_back(FaceDownPrefab	::m_data);
-						if (i + 1 > 15 || cubes[i + 1][j][k] == 0) faces.push_back(FaceRightPrefab	::m_data);
-						if (i - 1 < 00 || cubes[i - 1][j][k] == 0) faces.push_back(FaceLeftPrefab	::m_data);
-						if (k + 1 > 15 || cubes[i][j][k + 1] == 0) faces.push_back(FaceBackPrefab	::m_data);
-						if (k - 1 < 00 || cubes[i][j][k - 1] == 0) faces.push_back(FaceFrontPrefab	::m_data);
+						float* faces[6]{ nullptr };
+						if (j + 1 > 15 || gbap(glm::vec3(i, j + 1, k), cpos) == 0)	faces[0] = FaceUpPrefab::m_data;
+						if (/*j - 1 < 00 || */gbap(glm::vec3(i, j - 1, k), cpos) == 0)	faces[1] = FaceDownPrefab::m_data;
+						if (gbap(glm::vec3(i + 1, j, k), cpos) == 0)					faces[2] = FaceRightPrefab::m_data;
+						if (gbap(glm::vec3(i - 1, j, k), cpos) == 0)					faces[3] = FaceLeftPrefab::m_data;
+						if (gbap(glm::vec3(i, j, k + 1), cpos) == 0)					faces[4] = FaceBackPrefab::m_data;
+						if (gbap(glm::vec3(i, j, k - 1), cpos) == 0)					faces[5] = FaceFrontPrefab::m_data;
 
-						for (auto data: faces)
-						for (int l(0); l < 6; l++) {
-							glm::vec3 vp(data[l * 5 + 0], data[l * 5 + 1], data[l * 5 + 2]);
-							glm::vec2 tc(data[l * 5 + 3], data[l * 5 + 4]);
-							vp += translate;
-							tc = glm::vec2(
-								float((cubes[i][j][k] - 1) % 256) / 256.f,
-								float((cubes[i][j][k] - 1) / 256) / 256.f)
-								+ tc * glm::vec2(1.f / 256.f);
-							buffer.insert(buffer.end(), { vp.x, vp.y, vp.z, tc.x, tc.y });
-						}
+						for (auto data : faces)
+							if (data != nullptr)
+								for (int l(0); l < 6; l++) {
+									glm::vec3 vp(data[l * 8 + 0], data[l * 8 + 1], data[l * 8 + 2]);
+									glm::vec2 tc(data[l * 8 + 3], data[l * 8 + 4]);
+									glm::vec3 n(data[l * 8 + 5], data[l * 8 + 6], data[l * 8 + 7]);
+									vp += translate;
+									tc = glm::vec2(
+										float((c - 1) % 256) / 256.f,
+										float((c - 1) / 256) / 256.f)
+										+ tc * glm::vec2(1.f / 256.f);
+									buffer.insert(buffer.end(), { vp.x, vp.y, vp.z, tc.x, tc.y, n.x, n.y, n.z });
+								}
 					}
 				}
 			}
@@ -80,12 +87,18 @@ class WorldGenerator {
 	unsigned chunk[16][16][16];
 	Chunk** field;
 	glm::ivec3 position;
+
+	static int GetBlockAtPos(glm::vec3 bpos, glm::vec3 cpos) {
+		float h = (glm::perlin((glm::vec3(bpos.x, bpos.z, 0) + cpos * glm::vec3(16)) / 10.f) + 1) * 2;
+		return (bpos.y < h * 3) * 3;
+	}
+
 public:
 
 	WorldGenerator(float seed, unsigned distance, glm::vec3 eyepos): seed(seed), distance(distance) {
 		Chunk::Init();
 		field = new Chunk*[distance * distance];
-		position = eyepos / glm::vec3(16);
+		position = glm::vec3(eyepos.x, eyepos.z, eyepos.y) / glm::vec3(16);
 		for (int i(0); i < distance; i++) {
 			for (int j(0); j < distance; j++) {
 				field[j * distance + i] = nullptr;
@@ -98,7 +111,7 @@ public:
 	}
 
 	void Update(glm::vec3 cpos) {
-		glm::ivec3 _cpos = cpos / glm::vec3(16);
+		glm::ivec3 _cpos = glm::vec3(cpos.x, cpos.z, cpos.y) / glm::vec3(16);
 		if (_cpos.x > position.x) {
 			for (int j(0); j < distance; j++) {
 				if (field[j * distance + 0] != nullptr) delete field[j * distance + 0];
@@ -117,7 +130,7 @@ public:
 				field[j * distance + 0] = nullptr;
 			}
 		}
-		if (_cpos.z > position.z) {
+		if (_cpos.y > position.y) {
 			for (int i(0); i < distance; i++) {
 				if (field[i] != nullptr) delete field[i];
 				for (int j(0); j < distance - 1; j++) {
@@ -126,7 +139,7 @@ public:
 				field[(distance - 1) * distance + i] = nullptr;
 			}
 		}
-		else if (_cpos.z < position.z) {
+		else if (_cpos.y < position.y) {
 			for (int i(0); i < distance; i++) {
 				if (field[(distance - 1) * distance + i] != nullptr) delete field[(distance - 1) * distance + i];
 				for (int j(distance - 1); j > 0; j--) {
@@ -138,16 +151,8 @@ public:
 		for (int i(0); i < distance; i++) {
 			for (int j(0); j < distance; j++) {
 				if (field[j * distance + i] == nullptr) {
-					for (int x(0); x < 16; x++) {
-						for (int y(0); y < 16; y++) {
-							float h = (glm::perlin((glm::vec3(x, y, 0) + (glm::vec3(_cpos) + glm::vec3(i - 1, j - 1, 0)) * glm::vec3(16)) / 10.f) + 1) * 2;
-							for (int z(0); z < 16; z++) {
-								chunk[x][z][y] = z < h * 3;
-							}
-						}
-					}
 					field[j * distance + i] = new Chunk();
-					field[j * distance + i]->LoadData(chunk);
+					field[j * distance + i]->LoadChunk(GetBlockAtPos, glm::vec3(_cpos) + glm::vec3(i - int(distance / 2), j - int(distance / 2), 0));
 				}
 			}
 		}

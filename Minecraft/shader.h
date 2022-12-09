@@ -14,7 +14,7 @@ public:
 	Shader(const char* vss, const char* fss) {
 		unsigned int vs = glCreateShader(GL_VERTEX_SHADER);
 		unsigned int fs = glCreateShader(GL_FRAGMENT_SHADER);
-		
+
 		PID = glCreateProgram();
 
 		std::ifstream vsf(vss, std::ios::binary);
@@ -77,6 +77,10 @@ public:
 
 	void SetMat4(const char* name, glm::mat4 mat) {
 		glUniformMatrix4fv(glGetUniformLocation(PID, name), 1, GL_FALSE, glm::value_ptr(mat));
+	}
+
+	void SetVec3(const char* name, glm::vec3 v) {
+		glUniform3fv(glGetUniformLocation(PID, name), 1, glm::value_ptr(v));
 	}
 
 	void SetUint(const char* name, unsigned v) {
