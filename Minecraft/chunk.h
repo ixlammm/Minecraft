@@ -85,13 +85,6 @@ public:
 	WorldGenerator(float seed, unsigned distance, glm::vec3 eyepos): seed(seed), distance(distance) {
 		Chunk::Init();
 		field = new Chunk*[distance * distance];
-		for (int i(0); i < 16; i++) {
-			for (int j(0); j < 16; j++) {
-				for (int k(0); k < 16; k++) {
-					chunk[i][j][k] = int((glm::perlin(glm::vec3(i, j, k) / 10.f) + 1) * 2) % 3;
-				}
-			}
-		}
 		position = eyepos / glm::vec3(16);
 		for (int i(0); i < distance; i++) {
 			for (int j(0); j < distance; j++) {
@@ -106,7 +99,7 @@ public:
 
 	void Update(glm::vec3 cpos) {
 		glm::ivec3 _cpos = cpos / glm::vec3(16);
-		if (cpos.x > position.x) {
+		if (_cpos.x > position.x) {
 			for (int j(0); j < distance; j++) {
 				if (field[j * distance + 0] != nullptr) delete field[j * distance + 0];
 				for (int i(0); i < distance - 1; i++) {
@@ -115,7 +108,7 @@ public:
 				field[j * distance + distance - 1] = nullptr;
 			}
 		}
-		else if (cpos.x < position.x) {
+		else if (_cpos.x < position.x) {
 			for (int j(0); j < distance; j++) {
 				if (field[j * distance + distance - 1] != nullptr) delete field[j * distance + distance - 1];
 				for (int i(distance - 1); i > 0; i--) {
@@ -124,7 +117,7 @@ public:
 				field[j * distance + 0] = nullptr;
 			}
 		}
-		if (cpos.z > position.z) {
+		if (_cpos.z > position.z) {
 			for (int i(0); i < distance; i++) {
 				if (field[i] != nullptr) delete field[i];
 				for (int j(0); j < distance - 1; j++) {
@@ -133,7 +126,7 @@ public:
 				field[(distance - 1) * distance + i] = nullptr;
 			}
 		}
-		else if (cpos.z < position.z) {
+		else if (_cpos.z < position.z) {
 			for (int i(0); i < distance; i++) {
 				if (field[(distance - 1) * distance + i] != nullptr) delete field[(distance - 1) * distance + i];
 				for (int j(distance - 1); j > 0; j--) {
@@ -147,8 +140,9 @@ public:
 				if (field[j * distance + i] == nullptr) {
 					for (int x(0); x < 16; x++) {
 						for (int y(0); y < 16; y++) {
+							float h = (glm::perlin((glm::vec3(x, y, 0) + (glm::vec3(_cpos) + glm::vec3(i - 1, j - 1, 0)) * glm::vec3(16)) / 10.f) + 1) * 2;
 							for (int z(0); z < 16; z++) {
-								chunk[x][y][z] = int((glm::perlin((glm::vec3(x, y, z) + glm::vec3(_cpos) + glm::vec3(i - 1, 0, j - 1) * glm::vec3(16)) / 10.f) + 1) * 2) % 3;
+								chunk[x][z][y] = z < h * 3;
 							}
 						}
 					}

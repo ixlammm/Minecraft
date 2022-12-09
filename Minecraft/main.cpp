@@ -21,11 +21,13 @@
 
 #define WIDTH 800
 #define HEIGHT 550
+#define DISTANCE 6
+#define KEYS 0.05f
+#define CAMS 0.006f
+
 
 Camera camera(glm::vec3(0, 20, 0), glm::vec3(0, 0, -1));
 
-#define KEYS 0.05f
-#define CAMS 0.006f
 
 void KeyUpdate(GLFWwindow* window)
 {
@@ -72,7 +74,7 @@ int main() {
 	Shader shader("vs.vert", "fs.frag");
 	shader.Use();
 
-	WorldGenerator wg(4.f, 3, glm::vec3(0));
+	WorldGenerator wg(4.f, DISTANCE, glm::vec3(0));
 
 	glViewport(0, 0, WIDTH, HEIGHT);
 
@@ -87,7 +89,7 @@ int main() {
 
 	while (!glfwWindowShouldClose(window)) {
 
-		glClearColor(1, 1, 1, 1);
+		glClearColor(0.80, 0.98, 1, 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		double xpos, ypos;
@@ -106,13 +108,13 @@ int main() {
 		shader.SetUint("text", 1);
 
 		wg.Update(camera.GetPosition());
-		for (int i(0); i < 3; i++) {
-			for (int j(0); j < 3; j++) {
-				transform = glm::translate((glm::vec3(i - 1, 0, j - 1) + glm::vec3(glm::ivec3(camera.GetPosition() / glm::vec3(16)))) * glm::vec3(16, 0, 16));
-				wg.GetField()[j * 3 + i]->Use();
+		for (int i(0); i < DISTANCE; i++) {
+			for (int j(0); j < DISTANCE; j++) {
+				transform = glm::translate((glm::vec3(i - (DISTANCE - 1) / 2, 0, j - (DISTANCE - 1) / 2) + glm::vec3(glm::ivec3(camera.GetPosition() / glm::vec3(16))) + glm::vec3(-0.5, 0, -0.5)) * glm::vec3(16, 0, 16));
+				wg.GetField()[j * DISTANCE + i]->Use();
 				shader.SetMat4("transform", transform);
 				glBindVertexArray(Chunk::VAO);
-				glDrawArrays(GL_TRIANGLES, 0, wg.GetField()[j * 3 + i]->buffer.size() / 5);
+				glDrawArrays(GL_TRIANGLES, 0, wg.GetField()[j * DISTANCE + i]->buffer.size() / 5);
 			}
 		}
 
