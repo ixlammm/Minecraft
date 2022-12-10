@@ -54,7 +54,9 @@ public:
 						if (gbap(glm::vec3(i, j, k + 1), cpos) == 0)					faces[4] = FaceBackPrefab::m_data;
 						if (gbap(glm::vec3(i, j, k - 1), cpos) == 0)					faces[5] = FaceFrontPrefab::m_data;
 
-						for (auto data : faces)
+						for (int f(0); f < 6; f++) {
+							float* data = faces[f];
+							unsigned texture_id = CUBES[c].texture_id[f];
 							if (data != nullptr)
 								for (int l(0); l < 6; l++) {
 									glm::vec3 vp(data[l * 8 + 0], data[l * 8 + 1], data[l * 8 + 2]);
@@ -62,11 +64,12 @@ public:
 									glm::vec3 n(data[l * 8 + 5], data[l * 8 + 6], data[l * 8 + 7]);
 									vp += translate;
 									tc = glm::vec2(
-										float((c - 1) % 256) / 256.f,
-										float((c - 1) / 256) / 256.f)
+										float(texture_id % 255) / 256.f,
+										float(texture_id / 255) / 256.f)
 										+ tc * glm::vec2(1.f / 256.f);
 									buffer.insert(buffer.end(), { vp.x, vp.y, vp.z, tc.x, tc.y, n.x, n.y, n.z });
 								}
+						}
 					}
 				}
 			}
@@ -89,9 +92,14 @@ class WorldGenerator {
 	glm::ivec3 position;
 
 	static int GetBlockAtPos(glm::vec3 bpos, glm::vec3 cpos) {
-		float h = (glm::perlin((glm::vec3(bpos.x, bpos.z, 0) + cpos * glm::vec3(16)) / 10.f) + 1) * 2;
+		float h = (glm::perlin((glm::vec2(bpos.x, bpos.z) + glm::vec2(cpos) * glm::vec2(16)) / 10.f) + 1) * 2;
 		int id = 0;
-		if (bpos.y < h * 3 + 3) id = 1;
+		if (bpos.y < h * 3 + 3) {
+			if (GetBlockAtPos(bpos + glm::vec3(0, 1, 0), cpos) == MC_BLOCK_AIR_ID)
+				id = MC_BLOCK_GRASS_PATH_ID;
+			else
+				id = MC_BLOCK_DIRT_ID;
+		}
 		if (bpos.y < h * 3) id = 2;
 		return id;
 	}

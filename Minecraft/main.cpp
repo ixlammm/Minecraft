@@ -24,7 +24,7 @@
 #define WIDTH 1920
 #define HEIGHT 1080
 #define DISTANCE 10
-#define KEYS 0.05f
+#define KEYSS 3.f
 #define CAMS 0.006f
 
 
@@ -45,7 +45,7 @@ class MainScript : public MinecraftScript {
 		shader->SetVec3("lightDir", glm::vec3(-0.5, -1, -1));
 		shader->SetVec3("ambient", glm::vec3(0.5));	
 
-		glm::mat4 projection = glm::perspective(45.0, double(WIDTH) / HEIGHT, 0.01, 100.0);
+		glm::mat4 projection = glm::perspective(45.0, double(WIDTH) / HEIGHT, 0.01, 300.0);
 		glUniformMatrix4fv(glGetUniformLocation(shader->GetPID(), "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
 	}
@@ -66,15 +66,24 @@ class MainScript : public MinecraftScript {
 		shader->SetUint("text", 0);
 
 		wg->Update(camera.GetPosition() * glm::vec3(1, 0, 1));
+		int cif = 0;
 		for (int i(0); i < DISTANCE; i++) {
 			for (int j(0); j < DISTANCE; j++) {
-				transform = glm::translate((glm::vec3(i - (DISTANCE) / 2, 0, j - (DISTANCE) / 2) + glm::vec3(glm::ivec3(camera.GetPosition() / glm::vec3(16)))) * glm::vec3(16, 0, 16));
-				wg->GetField()[j * DISTANCE + i]->Use();
-				shader->SetMat4("transform", transform);
-				glBindVertexArray(Chunk::VAO);
-				glDrawArrays(GL_TRIANGLES, 0, wg->GetField()[j * DISTANCE + i]->buffer.size() / 8);
+				glm::vec3 pos = (glm::vec3(i - (DISTANCE) / 2, 0, j - (DISTANCE) / 2) + glm::vec3(glm::ivec3(camera.GetPosition() / glm::vec3(16)))) * glm::vec3(16, 0, 16);
+				if (glm::dot(glm::normalize(pos + camera.Front() * glm::vec3(16, 0, 16) - camera.GetPosition()), camera.Front())> 0) {
+					transform = glm::translate(pos);
+					wg->GetField()[j * DISTANCE + i]->Use();
+					shader->SetMat4("transform", transform);
+					glBindVertexArray(Chunk::VAO);
+					glDrawArrays(GL_TRIANGLES, 0, wg->GetField()[j * DISTANCE + i]->buffer.size() / 8);
+					cif++;
+				}
 			}
 		}
+
+		std::cout << "Chunks in frame: " << cif << " of : "  << DISTANCE * DISTANCE << "\n";
+
+		float KEYS = KEYSS * game.deltaTime;
 
 		if (game.control.GetKey(GLFW_KEY_A))
 			camera.Translate(-camera.Right() * KEYS);
@@ -90,6 +99,9 @@ class MainScript : public MinecraftScript {
 			camera.Translate(-WORLD_UP * KEYS);
 		if (game.control.GetKey(GLFW_KEY_ESCAPE))
 			glfwSetWindowShouldClose(game.window.GetGLFWWindow(), true);
+		if (game.control.GetKey(GLFW_KEY_F11)) {
+			glfwSetWindowMonitor(game.window.GetGLFWWindow(), glfwGetPrimaryMonitor(), 0, 0, 1920, 1080, GLFW_DONT_CARE);
+		}
 	}
 };
 
@@ -107,12 +119,15 @@ int main() {
 
 	glEnable(GL_DEPTH_TEST);
 
+	glfwSwapInterval(0);
+
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_CW);
+
 	glViewport(0, 0, WIDTH, HEIGHT);
 	glfwWindowHint(GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 	glfwSetInputMode(win.GetGLFWWindow(), GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 	glfwSetCursorPos(win.GetGLFWWindow(), WIDTH / 2, HEIGHT / 2);
 
 	game.Start();
-	
-	glfwTerminate();
 }

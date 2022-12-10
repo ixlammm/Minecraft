@@ -19,12 +19,14 @@ class ResourceManager {
 			for (int j(0); j < 16; j++)
 				for (int i(0); i < 16 * 3; i++)
 					cubes_texture_data[(k % 256) * 16 * 3 + p + j * 4096 * 3 + i] = data[j * w * 3 + i];
+			stbi_image_free(data);
 		}
 		CubesTexture.LoadFromData(cubes_texture_data, width, height);
 		delete[] cubes_texture_data;
 	}
 public:
 	ResourceManager() {
+		stbi_set_flip_vertically_on_load(true);
 	}
 
 	void LoadResources() {

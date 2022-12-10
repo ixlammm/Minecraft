@@ -9,7 +9,9 @@
 class MinecraftGame {
 	Camera* maincamera;
 	std::vector<MinecraftScript*> scripts;
+
 public:
+	float deltaTime = 1;
 
 	Control& control;
 	Window &window;
@@ -39,8 +41,10 @@ public:
 	void Update() {
 		window.PreUpdate();
 
+		float now = glfwGetTime();
 		for (auto sc : scripts)
 			sc->Update();
+		deltaTime = glfwGetTime() - now;
 
 		window.PostUpdate();
 	}

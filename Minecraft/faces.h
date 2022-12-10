@@ -21,13 +21,13 @@ DEFINE_FACE(FaceFrontPrefab);
 DEFINE_FACE(FaceBackPrefab);
 
 float FaceUpPrefab::m_data[FACE_DATA_SIZE] = {
-	1, 1, 0,	0, 0,	0, 1, 0,
-	0, 1, 0,	1, 0,	0, 1, 0,
-	0, 1, 1,	1, 1,	0, 1, 0,
+	1, 1, 0,	1, 0,	0, 1, 0,
+	0, 1, 0,	0, 0,	0, 1, 0,
+	0, 1, 1,	0, 1,	0, 1, 0,
 
-	1, 1, 0,	0, 0,	0, 1, 0,
-	0, 1, 1,	1, 1,	0, 1, 0,
-	1, 1, 1,	0, 1,	0, 1, 0,
+	1, 1, 0,	1, 0,	0, 1, 0,
+	0, 1, 1,	0, 1,	0, 1, 0,
+	1, 1, 1,	1, 1,	0, 1, 0,
 };
 
 float FaceDownPrefab::m_data[FACE_DATA_SIZE] = {
