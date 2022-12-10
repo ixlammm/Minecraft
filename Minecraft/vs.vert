@@ -10,9 +10,12 @@ uniform mat4 projection;
 
 out vec2 texCoord;
 out vec3 normal;
+out vec4 fragPos;
+
 
 void main() {
 	texCoord = iTexCoord;
 	normal = iNormal;
+	fragPos = view * transform * vec4(pos, 1.0);
 	gl_Position = projection * view * transform * vec4(pos, 1.0);
 }

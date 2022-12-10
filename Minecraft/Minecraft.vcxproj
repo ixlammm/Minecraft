@@ -154,16 +154,21 @@
     <ClInclude Include="camera.h" />
     <ClInclude Include="chunk.h" />
     <ClInclude Include="constants.h" />
+    <ClInclude Include="control.h" />
     <ClInclude Include="cube.h" />
     <ClInclude Include="cubes.h" />
     <ClInclude Include="faces.h" />
+    <ClInclude Include="game.h" />
     <ClInclude Include="object.h" />
+    <ClInclude Include="player.h" />
     <ClInclude Include="prefab.h" />
     <ClInclude Include="rsrcmng.h" />
+    <ClInclude Include="script.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="texture.h" />
     <ClInclude Include="textures.h" />
+    <ClInclude Include="window.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md" />

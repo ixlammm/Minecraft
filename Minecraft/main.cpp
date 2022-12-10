@@ -12,122 +12,107 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include "game.h"
 
 #include <random>
 
+#include "script.h"
 #include "cubes.h"
 #include "rsrcmng.h"
 #include "chunk.h"
 
-#define WIDTH 800
-#define HEIGHT 550
-#define DISTANCE 6
+#define WIDTH 1920
+#define HEIGHT 1080
+#define DISTANCE 10
 #define KEYS 0.05f
 #define CAMS 0.006f
 
 
 Camera camera(glm::vec3(0, 20, 0), glm::vec3(0, 0, -1));
 
+class MainScript : public MinecraftScript {
+	using MinecraftScript::MinecraftScript;
 
-void KeyUpdate(GLFWwindow* window)
-{
-	if (glfwGetKey(window,GLFW_KEY_A) == GLFW_PRESS)
-		camera.Translate(-camera.Right() * KEYS);
-	if (glfwGetKey(window,GLFW_KEY_D) == GLFW_PRESS)
-		camera.Translate(camera.Right() * KEYS);
-	if (glfwGetKey(window,GLFW_KEY_W) == GLFW_PRESS)
-		camera.Translate(camera.Front() * KEYS);
-	if (glfwGetKey(window,GLFW_KEY_S) == GLFW_PRESS)
-		camera.Translate(-camera.Front() * KEYS);
-	if (glfwGetKey(window,GLFW_KEY_SPACE) == GLFW_PRESS)
-		camera.Translate(WORLD_UP * KEYS);
-	if (glfwGetKey(window,GLFW_KEY_C) == GLFW_PRESS)
-		camera.Translate(-WORLD_UP * KEYS);
-	if (glfwGetKey(window,GLFW_KEY_ESCAPE) == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, true);
-}
+	Shader* shader;
+	WorldGenerator *wg;
 
-ResourceManager rm;
+	void Start() {
+		shader = new Shader("vs.vert", "fs.frag");
 
-int main() {
+		wg = new WorldGenerator(4.f, DISTANCE, glm::vec3(0));
 
-	if (!glfwInit()) {
-		std::cout << "Error: Init GLFW\n";
+		shader->Use();
+		shader->SetVec3("lightDir", glm::vec3(-0.5, -1, -1));
+		shader->SetVec3("ambient", glm::vec3(0.5));	
+
+		glm::mat4 projection = glm::perspective(45.0, double(WIDTH) / HEIGHT, 0.01, 100.0);
+		glUniformMatrix4fv(glGetUniformLocation(shader->GetPID(), "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+
 	}
 
-	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "GLFW_ WINDOW", 0, 0);
+	void Update() {
+		glm::ivec2 pos = game.control.GetMousePosition();
 
-	if (!window) {
-		std::cout << "Error: glfw window";
-		exit(-1);
-	}
-
-	glfwMakeContextCurrent(window);
-	gladLoadGLLoader(GLADloadproc(glfwGetProcAddress));
-
-	//Texture noise = GenNoise(1024, 1024);
-
-	rm.LoadResources();
-
-	glEnable(GL_DEPTH_TEST);
-
-	Shader shader("vs.vert", "fs.frag");
-	shader.Use();
-
-	WorldGenerator wg(4.f, DISTANCE, glm::vec3(0));
-
-	glViewport(0, 0, WIDTH, HEIGHT);
-
-	glm::mat4 projection = glm::perspective(45.0, double(WIDTH) / HEIGHT, 0.01, 100.0);
-
-	glUniformMatrix4fv(glGetUniformLocation(shader.GetPID(), "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-
-	glfwWindowHint(GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-
-	glfwSetCursorPos(window, WIDTH / 2, HEIGHT / 2);
-	
-	shader.SetVec3("lightDir", glm::vec3(-0.5, -1, -1));
-	shader.SetVec3("ambient", glm::vec3(0.5));
-
-	// For Debuging:
-	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-	while (!glfwWindowShouldClose(window)) {
-
-		glClearColor(0.80, 0.98, 1, 1);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		double xpos, ypos;
-
-		glfwGetCursorPos(window, &xpos, &ypos);
-
-		glfwSetCursorPos(window, WIDTH / 2, HEIGHT / 2);
-		double deltaX = WIDTH / 2 - xpos, deltaY = HEIGHT / 2 - ypos;
+		game.control.SetMousePosition({ WIDTH / 2, HEIGHT / 2 });
+		double deltaX = WIDTH / 2 - pos.x, deltaY = HEIGHT / 2 - pos.y;
 
 		glm::mat4 transform(1);
 
 		camera.Rotate(glm::vec3(deltaY * CAMS, deltaX * CAMS, 0));
 
-		shader.SetMat4("transform", transform);
-		shader.SetMat4("view", camera.GetView());
-		shader.SetUint("text", 1);
+		shader->SetVec3("camPos", camera.GetPosition());
+		shader->SetMat4("transform", transform);
+		shader->SetMat4("view", camera.GetView());
+		shader->SetUint("text", 0);
 
-		wg.Update(camera.GetPosition() * glm::vec3(1, 0, 1));
+		wg->Update(camera.GetPosition() * glm::vec3(1, 0, 1));
 		for (int i(0); i < DISTANCE; i++) {
 			for (int j(0); j < DISTANCE; j++) {
 				transform = glm::translate((glm::vec3(i - (DISTANCE) / 2, 0, j - (DISTANCE) / 2) + glm::vec3(glm::ivec3(camera.GetPosition() / glm::vec3(16)))) * glm::vec3(16, 0, 16));
-				wg.GetField()[j * DISTANCE + i]->Use();
-				shader.SetMat4("transform", transform);
+				wg->GetField()[j * DISTANCE + i]->Use();
+				shader->SetMat4("transform", transform);
 				glBindVertexArray(Chunk::VAO);
-				glDrawArrays(GL_TRIANGLES, 0, wg.GetField()[j * DISTANCE + i]->buffer.size() / 8);
+				glDrawArrays(GL_TRIANGLES, 0, wg->GetField()[j * DISTANCE + i]->buffer.size() / 8);
 			}
 		}
 
-		glfwPollEvents();
-		glfwSwapBuffers(window);
-		KeyUpdate(window);
+		if (game.control.GetKey(GLFW_KEY_A))
+			camera.Translate(-camera.Right() * KEYS);
+		if (game.control.GetKey(GLFW_KEY_D))
+			camera.Translate(camera.Right() * KEYS);
+		if (game.control.GetKey(GLFW_KEY_W))
+			camera.Translate(camera.Front() * KEYS);
+		if (game.control.GetKey(GLFW_KEY_S))
+			camera.Translate(-camera.Front() * KEYS);
+		if (game.control.GetKey(GLFW_KEY_SPACE))
+			camera.Translate(WORLD_UP * KEYS);
+		if (game.control.GetKey(GLFW_KEY_C))
+			camera.Translate(-WORLD_UP * KEYS);
+		if (game.control.GetKey(GLFW_KEY_ESCAPE))
+			glfwSetWindowShouldClose(game.window.GetGLFWWindow(), true);
 	}
+};
 
+ResourceManager rm;
+
+int main() {
+
+	Window::Init();
+	Window win("Minecraft", WIDTH, HEIGHT);
+
+	MinecraftGame game(win, *win.GetControl());
+	game.RegisterScript<MainScript>();
+
+	rm.LoadResources();
+
+	glEnable(GL_DEPTH_TEST);
+
+	glViewport(0, 0, WIDTH, HEIGHT);
+	glfwWindowHint(GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+	glfwSetInputMode(win.GetGLFWWindow(), GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+	glfwSetCursorPos(win.GetGLFWWindow(), WIDTH / 2, HEIGHT / 2);
+
+	game.Start();
+	
 	glfwTerminate();
 }

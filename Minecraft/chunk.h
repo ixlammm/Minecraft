@@ -90,7 +90,10 @@ class WorldGenerator {
 
 	static int GetBlockAtPos(glm::vec3 bpos, glm::vec3 cpos) {
 		float h = (glm::perlin((glm::vec3(bpos.x, bpos.z, 0) + cpos * glm::vec3(16)) / 10.f) + 1) * 2;
-		return (bpos.y < h * 3) * 3;
+		int id = 0;
+		if (bpos.y < h * 3 + 3) id = 1;
+		if (bpos.y < h * 3) id = 2;
+		return id;
 	}
 
 public:
